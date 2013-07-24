@@ -214,7 +214,7 @@ datalayer :: region_iterator :: cost()
 	rc = mdb_cursor_open(txn, dbi, &mc);
 	rc = mdb_cursor_get(mc, &k1, NULL, MDB_SET_RANGE);
 	while (rc == MDB_SUCCESS) {
-		if (mdb_cmp(txn, dbi, &k1, &k2) >= 0)
+		if (mdb_cmp(txn, dbi, &k1, &k2) > 0)
 			break;
 		ret += k1.mv_size;
 		rc = mdb_cursor_get(mc, &k1, NULL, MDB_NEXT);

@@ -413,7 +413,7 @@ range_iterator :: cost()
     // tally up the costs
 	rc = mdb_cursor_get(mc, &k1, NULL, MDB_SET_RANGE);
 	while (rc == MDB_SUCCESS) {
-		if (mdb_cmp(txn, dbi, &k1, &k2) >= 0)
+		if (mdb_cmp(txn, dbi, &k1, &k2) > 0)
 			break;
 		ret += k1.mv_size;
 		rc = mdb_cursor_get(mc, &k1, NULL, MDB_NEXT);
@@ -618,7 +618,7 @@ key_iterator :: cost()
     // tally up the costs
 	rc = mdb_cursor_get(mc, &k1, NULL, MDB_SET_RANGE);
 	while (rc == MDB_SUCCESS) {
-		if (mdb_cmp(txn, dbi, &k1, &k2) >= 0)
+		if (mdb_cmp(txn, dbi, &k1, &k2) > 0)
 			break;
 		ret += k1.mv_size;
 		rc = mdb_cursor_get(mc, &k1, NULL, MDB_NEXT);
