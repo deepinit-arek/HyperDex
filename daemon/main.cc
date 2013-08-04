@@ -163,6 +163,8 @@ main(int argc, const char* argv[])
 
                 _coordinator = true;
                 break;
+            case 's':
+                break;
             case 't':
                 break;
             case POPT_ERROR_NOARG:
