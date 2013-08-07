@@ -178,12 +178,6 @@ using hyperdex::dbwrap_snapshot_ptr;
 using hyperdex::range;
 using hyperdex::region_id;
 
-e::slice
-level2e(const DB_SLICE& s)
-{
-    return e::slice(s.data(), s.size());
-}
-
 bool
 decode_entry(const DB_SLICE& in,
              index_info* val_ii,
@@ -358,25 +352,41 @@ range_iterator :: valid()
             return false;
         }
 
-        if (!m_range.has_end)
+        // if there is a start, and the current value is less than it, advance
+        // the iterator
+        if (m_range.has_start)
         {
-            return true;
+            size_t sz = std::min(m_range.start.size(), v.size());
+            int cmp = memcmp(m_range.start.data(), v.data(), sz);
+
+            if (cmp > 0 ||
+                (cmp == 0 && m_range.start.size() > v.size()))
+            {
+                rc = mdb_cursor_get(m_iter.get(), &kk, NULL, MDB_NEXT);
+                continue;
+            }
         }
 
-        size_t sz = std::min(m_range.end.size(), v.size());
-        int cmp = memcmp(m_range.end.data(), v.data(), sz);
-
-        if (cmp > 0)
+        // if there is an end, and the current value is greater than it, advance
+        // the iterator.  If all possible subsequent values are greater than it,
+        // advance to the end
+        if (m_range.has_end)
         {
-            m_invalid = true;
-            return false;
-        }
+            size_t sz = std::min(m_range.end.size(), v.size());
+            int cmp = memcmp(m_range.end.data(), v.data(), sz);
 
-        // if v > end
-        if (cmp == 0 && m_range.end.size() < v.size())
-        {
-            rc = mdb_cursor_get(m_iter.get(), &kk, NULL, MDB_NEXT);
-            continue;
+            if (cmp < 0)
+            {
+                m_invalid = true;
+                return false;
+            }
+
+            if (cmp == 0 && m_range.end.size() < v.size())
+            {
+				rc = mdb_cursor_get(m_iter.get(), &kk, NULL, MDB_NEXT);
+                continue;
+            }
+            // XXX this will iterate to the end, unnecessarily
         }
 
         return true;
@@ -402,7 +412,16 @@ range_iterator :: cost()
 	int rc;
     assert(this->sorted());
     DB_SLICE upper;
-    m_val_ii->index_entry(m_ri, m_range.attr, m_range.end, &m_scratch, &upper);
+
+    if (m_range.has_end)
+    {
+        m_val_ii->index_entry(m_ri, m_range.attr, m_range.end, &m_scratch, &upper);
+    }
+    else
+    {
+        m_val_ii->index_entry(m_ri, m_range.attr, &m_scratch, &upper);
+    }
+
     hyperdex::encode_bump(&m_scratch.front(), &m_scratch.front() + m_scratch.size());
     // create the range
 	txn = mdb_cursor_txn(m_iter.get());
@@ -470,7 +489,7 @@ range_iterator :: seek(const e::slice& ik)
 	MDB_val k;
     assert(sorted());
     DB_SLICE slice;
-    m_val_ii->index_entry(m_ri, m_range.attr, m_key_ii, m_range.start, ik, &m_scratch, &slice);
+    m_val_ii->index_entry(m_ri, m_range.attr, m_key_ii, ik, m_range.start, &m_scratch, &slice);
 	MVSL(k,slice);
 	mdb_cursor_get(m_iter.get(), &k, NULL, MDB_SET);
 }
@@ -571,17 +590,11 @@ key_iterator :: valid()
         size_t sz = std::min(m_range.end.size(), k.size());
         int cmp = memcmp(m_range.end.data(), k.data(), sz);
 
-        if (cmp > 0)
+        if (cmp > 0 ||
+            (cmp == 0 && m_range.end.size() < k.size()))
         {
             m_invalid = true;
             return false;
-        }
-
-        // if k > end
-        if (cmp == 0 && m_range.end.size() < k.size())
-        {
-            rc = mdb_cursor_get(m_iter.get(), &kk, NULL, MDB_NEXT);
-            continue;
         }
 
         return true;
@@ -607,7 +620,16 @@ key_iterator :: cost()
 	int rc;
     assert(this->sorted());
     DB_SLICE upper;
-    encode_key(m_ri, m_range.type, m_range.end, &m_scratch, &upper);
+
+    if (m_range.has_end)
+    {
+        encode_key(m_ri, m_range.type, m_range.end, &m_scratch, &upper);
+    }
+    else
+    {
+        encode_object_region(m_ri, &m_scratch, &upper);
+    }
+
     hyperdex::encode_bump(&m_scratch.front(), &m_scratch.front() + m_scratch.size());
     // create the range
 	txn = mdb_cursor_txn(m_iter.get());
