@@ -890,7 +890,7 @@ datalayer :: check_acked(const region_id& ri,
     seq_id = UINT64_MAX - seq_id;
 	int rc;
     char abacking[ACKED_BUF_SIZE];
-	MDB_val k;
+	MDB_val k, v;
     encode_acked(ri, reg_id, seq_id, abacking);
 	MVBF(k,abacking);
 
@@ -899,7 +899,7 @@ datalayer :: check_acked(const region_id& ri,
 	{
 		return false;
 	}
-	rc = mdb_get(txn, m_dbi, &k, NULL);
+	rc = mdb_get(txn, m_dbi, &k, &v);
 	mdb_txn_abort(txn);
     if (rc == MDB_SUCCESS)
     {
