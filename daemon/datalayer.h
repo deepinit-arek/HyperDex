@@ -59,17 +59,17 @@
 #include "daemon/reconfigure_returncode.h"
 
 #if 0
-#define	DB_SLICE	leveldb::Slice
-#define DB_WBATCH	leveldb::WriteBatch
+#define DB_SLICE    leveldb::Slice
+#define DB_WBATCH   leveldb::WriteBatch
 #else
-#define	DB_SLICE	e::slice
-#define DB_WBATCH	MDB_txn*
+#define DB_SLICE    e::slice
+#define DB_WBATCH   MDB_txn*
 #endif
 
 #define STRLENOF(s)	(sizeof(s)-1)
 
 /* Assign a string constant to an MDB_val */
-#define	MVS(v,s)	v.mv_data = (void *)s; v.mv_size = STRLENOF(s)
+#define MVS(v,s)	v.mv_data = (void *)s; v.mv_size = STRLENOF(s)
 
 /* data and size of a string constant */
 #define MVAL(s)		s, STRLENOF(s)
@@ -116,8 +116,8 @@ class datalayer
                    server_id* saved_us,
                    po6::net::location* saved_bind_to,
                    po6::net::hostname* saved_coordinator,
-				   unsigned threads,
-				   unsigned maxsize);
+                   unsigned threads,
+                   unsigned maxsize);
         void teardown();
         // perform one-time initialization of the db (call after "setup").
         // requires that "saved" was false in "setup".
@@ -226,7 +226,7 @@ class datalayer
     private:
         daemon* m_daemon;
         dbwrap_db_ptr m_db;
-		MDB_dbi m_dbi;
+        MDB_dbi m_dbi;
         counter_map m_counters;
         po6::threads::thread m_cleaner;
         po6::threads::mutex m_block_cleaner;
@@ -247,15 +247,15 @@ class datalayer::reference
 
     public:
         void swap(reference* ref);
-		void persist();
+        void persist();
 
     private:
         friend class datalayer;
 
     private:
         std::string m_backing;
-		e::slice m_slice;
-		MDB_txn *m_rtxn;
+        e::slice m_slice;
+        MDB_txn *m_rtxn;
 };
 
 std::ostream&

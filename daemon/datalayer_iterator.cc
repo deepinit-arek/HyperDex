@@ -137,10 +137,10 @@ datalayer :: region_iterator :: region_iterator(dbwrap_iterator_ptr iter,
 {
     char buf[sizeof(uint8_t) + sizeof(uint64_t)];
     char* ptr = buf;
-	MDB_val k = {sizeof(buf), buf};
+    MDB_val k = {sizeof(buf), buf};
     ptr = e::pack8be('o', ptr);
     ptr = e::pack64be(ri.get(), ptr);
-	mdb_cursor_get(iter.get(), &k, NULL, MDB_SET_RANGE);
+    mdb_cursor_get(iter.get(), &k, NULL, MDB_SET_RANGE);
 }
 
 datalayer :: region_iterator :: ~region_iterator() throw ()
@@ -156,11 +156,11 @@ datalayer :: region_iterator :: describe(std::ostream& out) const
 bool
 datalayer :: region_iterator :: valid()
 {
-	MDB_val k;
-	int rc;
-	
-	rc = mdb_cursor_get(m_iter.get(), &k, NULL, MDB_GET_CURRENT);
-	if (rc)
+    MDB_val k;
+    int rc;
+
+    rc = mdb_cursor_get(m_iter.get(), &k, NULL, MDB_GET_CURRENT);
+    if (rc)
     {
         return false;
     }
@@ -183,18 +183,18 @@ datalayer :: region_iterator :: valid()
 void
 datalayer :: region_iterator :: next()
 {
-	mdb_cursor_get(m_iter.get(), NULL, NULL, MDB_NEXT);
+    mdb_cursor_get(m_iter.get(), NULL, NULL, MDB_NEXT);
 }
 
 uint64_t
 datalayer :: region_iterator :: cost()
 {
-	MDB_txn *txn;
-	MDB_cursor *mc;
-	MDB_val k1, k2;
+    MDB_txn *txn;
+    MDB_cursor *mc;
+    MDB_val k1, k2;
     uint64_t ret = 0;
-	MDB_dbi dbi;
-	int rc;
+    MDB_dbi dbi;
+    int rc;
     const size_t sz = sizeof(uint8_t) + sizeof(uint64_t);
     char buf[2 * sz];
     char* ptr = buf;
@@ -204,22 +204,22 @@ datalayer :: region_iterator :: cost()
     ptr = e::pack64be(m_ri.get(), ptr);
     encode_bump(buf + sz, buf + 2 * sz);
     // create the range
-	k1.mv_data = buf;
-	k1.mv_size = sz;
-	k2.mv_data = buf + sz;
-	k2.mv_size = sz;
-	txn = mdb_cursor_txn(m_iter.get());
-	dbi = mdb_cursor_dbi(m_iter.get());
-	// tally up the sizes of all the keys in [k1,k2)
-	rc = mdb_cursor_open(txn, dbi, &mc);
-	rc = mdb_cursor_get(mc, &k1, NULL, MDB_SET_RANGE);
-	while (rc == MDB_SUCCESS) {
-		if (mdb_cmp(txn, dbi, &k1, &k2) > 0)
-			break;
-		ret += k1.mv_size;
-		rc = mdb_cursor_get(mc, &k1, NULL, MDB_NEXT);
-	}
-	mdb_cursor_close(mc);
+    k1.mv_data = buf;
+    k1.mv_size = sz;
+    k2.mv_data = buf + sz;
+    k2.mv_size = sz;
+    txn = mdb_cursor_txn(m_iter.get());
+    dbi = mdb_cursor_dbi(m_iter.get());
+    // tally up the sizes of all the keys in [k1,k2)
+    rc = mdb_cursor_open(txn, dbi, &mc);
+    rc = mdb_cursor_get(mc, &k1, NULL, MDB_SET_RANGE);
+    while (rc == MDB_SUCCESS) {
+        if (mdb_cmp(txn, dbi, &k1, &k2) > 0)
+            break;
+        ret += k1.mv_size;
+        rc = mdb_cursor_get(mc, &k1, NULL, MDB_NEXT);
+    }
+    mdb_cursor_close(mc);
     return ret;
 }
 
@@ -227,8 +227,8 @@ e::slice
 datalayer :: region_iterator :: key()
 {
     const size_t sz = sizeof(uint8_t) + sizeof(uint64_t);
-	MDB_val _k;
-	mdb_cursor_get(m_iter.get(), &_k, NULL, MDB_GET_CURRENT);
+    MDB_val _k;
+    mdb_cursor_get(m_iter.get(), &_k, NULL, MDB_GET_CURRENT);
     e::slice k = e::slice((const char *)_k.mv_data + sz, _k.mv_size - sz);
     size_t decoded_sz = m_di->decoded_size(k);
 
@@ -433,16 +433,16 @@ datalayer :: search_iterator :: valid()
     // while the most selective iterator is valid and not past the end
     while (m_iter->valid())
     {
-		MDB_txn *txn;
-		MDB_val k, val;
+        MDB_txn *txn;
+        MDB_val k, val;
         std::vector<char> kbacking;
         DB_SLICE lkey;
-		int rc;
+        int rc;
         encode_key(m_ri, sc.attrs[0].type, m_iter->key(), &kbacking, &lkey);
-		MVSL(k,lkey);
+        MVSL(k,lkey);
 
-		txn = m_iter->snap().get();
-		rc = mdb_get(txn, 1, &k, &val);
+        txn = m_iter->snap().get();
+        rc = mdb_get(txn, 1, &k, &val);
 
         if (rc == MDB_SUCCESS)
         {
