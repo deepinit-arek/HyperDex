@@ -475,7 +475,7 @@ datalayer :: del(const region_id& ri,
     // delete the actual object
 	MVSL(k,lkey);
 	rc = mdb_del(updates, m_dbi, &k, 0);
-	if (rc)
+	if (rc && rc != MDB_NOTFOUND)
 	{
 		mdb_txn_abort(updates);
 		return handle_error(rc);
